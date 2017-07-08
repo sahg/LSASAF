@@ -165,7 +165,7 @@ class DSSFFile(LSAFFile):
     def __init__(self, fname):
         super().__init__(fname)
 
-    def read_dataset(self):  # Override parent class version
+    def read_dataset(self):  # Override parent class method
         """Get a masked array containing the DSSF values.
 
         Sea, space and severly contaminated pixels are masked out. The mask is
@@ -176,6 +176,24 @@ class DSSFFile(LSAFFile):
         """
         data = super().read_dataset('/DSSF')
         flags = self.read_raw_dataset('/DSSF_Q_Flag')
+
+        # Mask based on the quality flags [THIS IS STILL IN-PROGRESS]
+        data[flags == 0] = np.nan  # ocean pixel
+        data[flags == 2] = np.nan  # space pixel
+
+        return data
+
+    def sample_dataset(self, lat, lon):  # Override parent class method
+        """Get a masked array containing the DSSF values.
+
+        Sea, space and severly contaminated pixels are masked out. The mask is
+        defined according to the bitfield specified in
+        SAF_LAND_MF_PUM_DSSF_1.4.pdf. The masked array returned by this
+        function contains the DSSF in W/m^2.
+
+        """
+        data = super().sample_dataset('/DSSF', lat, lon)
+        flags = self.sample_raw_dataset('/DSSF_Q_Flag', lat, lon)
 
         # Mask based on the quality flags [THIS IS STILL IN-PROGRESS]
         data[flags == 0] = np.nan  # ocean pixel
