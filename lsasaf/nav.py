@@ -9,6 +9,8 @@ This python package is released under the modified BSD license
 """
 from . import _nav
 
+__all__ = ['geoloc_to_pixelloc', 'pixelloc_to_geoloc']
+
 def pixelloc_to_geoloc(row, col, loff, coff):
     """Convert from the pixel row and column to Geographic co-ordinates.
 
