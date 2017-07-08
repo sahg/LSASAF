@@ -7,6 +7,8 @@ This python package is released under the modified BSD license
 (details in the included LICENSE.txt).
 
 """
+import numpy as np
+
 from . import _nav
 
 __all__ = ['geoloc_to_pixelloc', 'pixelloc_to_geoloc']
@@ -21,7 +23,18 @@ def pixelloc_to_geoloc(row, col, loff, coff):
     longitude of the pixel centre.
 
     """
-    return _nav.pixelloc_to_geoloc(row, col, loff, coff)
+    row = np.atleast_1d(row)
+    col = np.atleast_1d(col)
+
+    assert row.shape == col.shape
+
+    lat, lon = _nav.pixelloc_to_geoloc(row, col, loff, coff)
+
+    if lat.size == lon.size == 1:
+        # Return scalars
+        return lat[0], lon[0]
+    else:
+        return lat, lon
 
 def geoloc_to_pixelloc(lat, lon, loff, coff):
     """Convert from the Geographic co-ordinates to pixel row and column.
@@ -33,4 +46,15 @@ def geoloc_to_pixelloc(lat, lon, loff, coff):
     and column.
 
     """
-    return _nav.geoloc_to_pixelloc(lat, lon, loff, coff)
+    lat = np.atleast_1d(lat)
+    lon = np.atleast_1d(lon)
+
+    assert lat.shape == lon.shape
+
+    row, col = _nav.geoloc_to_pixelloc(lat, lon, loff, coff)
+
+    if row.size == col.size == 1:
+        # Return scalars
+        return row[0], col[0]
+    else:
+        return row, col
