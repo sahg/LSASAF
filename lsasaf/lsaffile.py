@@ -103,7 +103,7 @@ class LSAFFile:
 
         """
         with h5py.File(self.fname) as h5file:
-            data = np.array(h5file[dset_name][...])
+            data = h5file[dset_name][...]
 
             loff = h5file.attrs['LOFF'] - 1
             coff = h5file.attrs['COFF'] - 1
@@ -127,6 +127,28 @@ class LSAFFile:
 
             if missing is not None:
                 data[data == missing] = np.nan
+
+        return data
+
+    def sample_dataset(self, dset_name, lat, lon):
+        with h5py.File(self.fname) as h5file:
+            data = h5file[dset_name][...]
+
+            loff = h5file.attrs['LOFF'] - 1
+            coff = h5file.attrs['COFF'] - 1
+
+            offset = h5file[dset_name]['OFFSET']
+            scale = h5file[dset_name]['SCALING_FACTOR']
+            missing = h5file[dset_name]['MISSING_VALUE']
+
+        row, col = geoloc_to_pixelloc(lat, lon, loff, coff)
+        data = data[row, col]
+
+        if (scale is not None) and (offset is not None):
+            data = data/scale + offset
+
+        if missing is not None:
+            data[data == missing] = np.nan
 
         return data
 
