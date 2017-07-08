@@ -239,19 +239,3 @@ def read_dslf(file_name):
 ##    data = ma.masked_where(flags == 29518, data)# Above Nominal (CMa - contaminated by snow/ice)
 
     return data
-
-def _get_bit_value(n, p):
-    """
-    get the bitvalue of denary (base 10) number n at the equivalent binary
-    position p (binary count starts at position 0 from the right)
-    """
-    return (n >> p) & 1
-
-def _test_bit_values(n, p):
-    """
-    Test the bitvalue of denary (base 10) number n at the equivalent binary
-    position p (binary count starts at position 0 from the right)
-    """
-    _get_bit_value(n, p)
-
-    return (n >> p) & 1
