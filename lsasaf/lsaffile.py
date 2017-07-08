@@ -13,6 +13,8 @@ from datetime import datetime
 import h5py
 import numpy as np
 
+from .nav import geoloc_to_pixelloc
+
 __all__ = ['LSAFFile', 'DSSFFile']
 
 class LSAFFile:
@@ -75,6 +77,40 @@ class LSAFFile:
             data = np.array(h5file[dset_name][...])
 
         return data
+
+    def sample_raw_dataset(self, dset_name, lat, lon):
+        """Sample a raw dataset as it appears on file
+
+        Samples the requested dataset at the given geographic coordinates, as
+        it appears in the HDF5 file. No shifting, scaling, masking or datatype
+        changes are applied. The data returned by this function must be
+        interpreted in conjunction with the dataset metadata and LSASAF
+        documentation.
+
+        Parameters
+        ----------
+        dset_name : string
+            The name of the dataset to be read.
+        lat : scalar or array
+            Latitude/s of the requested sampling location/s.
+        lon : scalar or array
+            Longitude/s of the requested sampling location/s.
+
+        Returns
+        -------
+        data : numpy ndarray
+            A numpy ndarray object containing the dataset as stored on disk.
+
+        """
+        with h5py.File(self.fname) as h5file:
+            data = np.array(h5file[dset_name][...])
+
+            loff = h5file.attrs['LOFF'] - 1
+            coff = h5file.attrs['COFF'] - 1
+
+        row, col = geoloc_to_pixelloc(lat, lon, loff, coff)
+
+        return data[row, col]
 
     def read_dataset(self, dset_name):
         with h5py.File(self.fname) as h5file:
