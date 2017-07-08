@@ -1,2 +1,2 @@
-from ._nav import *
+from .nav import *
 from .lsaffile import *
