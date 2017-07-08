@@ -109,8 +109,7 @@ class DSSFFile(LSAFFile):
     def __init__(self, fname):
         super().__init__(fname)
 
-    # def read_dataset(self):  # Override parent class version
-    def read_dssf(self):
+    def read_dataset(self):  # Override parent class version
         """Get a masked array containing the DSSF values.
 
         Sea, space and severly contaminated pixels are masked out. The mask is
@@ -120,7 +119,7 @@ class DSSFFile(LSAFFile):
 
         """
 
-        data = self.read_dataset('/DSSF')
+        data = super().read_dataset('/DSSF')
         flags = self.read_raw_dataset('/DSSF_Q_Flag')
 
         # Mask based on the quality flags [THIS IS STILL IN-PROGRESS]
