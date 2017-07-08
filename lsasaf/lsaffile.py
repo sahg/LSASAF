@@ -16,7 +16,7 @@ import tables as h5
 
 from numpy import ma
 
-__all__ = ['parse_file_name', 'LSAFFile', 'DSSFFile']
+__all__ = ['LSAFFile', 'DSSFFile']
 
 class LSAFFile:
     """Base class for LSASAF file readers
@@ -127,23 +127,6 @@ class DSSFFile(LSAFFile):
         data[flags == 2] = np.nan  # space pixel
 
         return data
-
-def parse_file_name(file_name):
-    """Parse an LSA-SAF file name to get the slot time.
-
-    A datetime object containg the slot time (in UTC) is returned.
-
-    """
-    # HDF5_LSASAF_MSG_DSLF_SAfr_200702211000.h5 or
-    # S-LSA_-HDF5_LSASAF_MSG_DSLF_SAfr_200707260830 etc.
-    indx = file_name.rfind('_') + 1
-    year = int(file_name[indx:indx+4])
-    month = int(file_name[indx+4:indx+6])
-    day = int(file_name[indx+6:indx+8])
-    hour = int(file_name[indx+8:indx+10])
-    min = int(file_name[indx+10:indx+12])
-
-    return datetime(year, month, day, hour, min)
 
 def _read_raw(file_name, data_node_name, quality_node_name):
     """Return the raw data and quality control flags.
