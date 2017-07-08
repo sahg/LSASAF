@@ -119,13 +119,65 @@ class DSSFFile(LSAFFile):
         function contains the DSSF in W/m^2.
 
         """
-
         data = super().read_dataset('/DSSF')
         flags = self.read_raw_dataset('/DSSF_Q_Flag')
 
         # Mask based on the quality flags [THIS IS STILL IN-PROGRESS]
         data[flags == 0] = np.nan  # ocean pixel
         data[flags == 2] = np.nan  # space pixel
+
+        return data
+
+class DSLFFile(LSAFFile):
+    """docstring for DSLFFile."""
+    def __init__(self, fname):
+        super().__init__(fname)
+
+    def read_dataset(self):  # Override parent class version
+        """Get a masked array containing the DSLF values.
+
+        Sea, space and severly contaminated pixels are masked out. The masked
+        array returned by this function contains the DSLF in W/m^2.
+
+        """
+        data = super().read_dataset('/DSLF')
+        flags = self.read_raw_dataset('/Q_FLAGS')
+
+        # Mask based on the quality flags [THIS IS STILL IN-PROGRESS]
+        data[flags == 0] = np.nan  # sea or space pixel
+        data[flags == 4] = np.nan  # T2m missing
+        data[flags == 12] = np.nan  # CMa - pixel non processed
+        data[flags == 92] = np.nan  # CMa - Undefined
+        data[flags == 156] = np.nan  # TPW information missing
+        data[flags == 44] = np.nan
+        # ^^ CTTH_EFFECTIVE missing (CMa - pixel contaminated by clouds)
+        data[flags == 60] = np.nan
+        # ^^ CTTH_EFFECTIVE missing (CMa - Cloud filled)
+        data[flags == 76] = np.nan
+        # ^^ CTTH_EFFECTIVE missing (CMa - contaminated by snow/ice)
+        data[flags == 812] = np.nan
+        # ^^ Td2m missing (CMa - pixel contaminated by clouds)
+        data[flags == 828] = np.nan  # Td2m missing (CMa - Cloud filled)
+        data[flags == 844] = np.nan
+        # ^^ Td2m missing (CMa - contaminated by snow/ice)
+    #    data[flags == 11422] = np.nan  # Below Nominal (CMa - Cloud-free)
+    #    data[flags == 19614] = np.nan  # Nominal (CMa - Cloud-free)
+    #    data[flags == 27806] = np.nan  # Above Nominal (CMa - Cloud-free)
+    #    data[flags == 13102] = np.nan
+    #    # ^^ Below Nominal (CMa - pixel contaminated by clouds)
+    #    data[flags == 21294] = np.nan
+    #    # ^^ Nominal (CMa - pixel contaminated by clouds)
+    #    data[flags == 29486] = np.nan
+    #    # ^^ Above Nominal (CMa - pixel contaminated by clouds)
+    #    data[flags == 13118] = np.nan  # Below Nominal (CMa - Cloud filled)
+    #    data[flags == 21310] = np.nan  # Nominal (CMa - Cloud filled)
+    #    data[flags == 29502] = np.nan  # Above Nominal (CMa - Cloud filled)
+    #    data[flags == 13134] = np.nan
+    #    # ^^ Below Nominal (CMa - contaminated by snow/ice)
+    #    data[flags == 21326] = np.nan
+    #    # ^^ Nominal(CMa - contaminated by snow/ice)
+    #    data[flags == 29518] = np.nan
+    #    # ^^ Above Nominal (CMa - contaminated by snow/ice)
 
         return data
 
@@ -200,42 +252,5 @@ def read_lst(file_name):
 ##    data = ma.masked_where(flags == 10014, data)# Nominal (EM nominal)
 ##    data = ma.masked_where(flags == 10142, data)# Nominal (EM above nominal)
 ##    data = ma.masked_where(flags == 14238, data)# Above Nominal (EM above nominal)
-
-    return data
-
-def read_dslf(file_name):
-    """Get a masked array containing the DSLF values.
-
-    Sea, space and severly contaminated pixels are masked out. The masked array
-    returned by this function contains the DSLF in W/m^2.
-
-    """
-
-    data, flags = _read_raw(file_name, '/DSLF', '/Q_FLAGS')
-
-    # mask based on the quality flags
-    data = ma.masked_where(flags == 0, data)# sea or space pixel
-    data = ma.masked_where(flags == 4, data)# T2m missing
-    data = ma.masked_where(flags == 12, data)# CMa - pixel non processed
-    data = ma.masked_where(flags == 92, data)# CMa - Undefined
-    data = ma.masked_where(flags == 156, data)# TPW information missing
-    data = ma.masked_where(flags == 44, data)# CTTH_EFFECTIVE missing (CMa - pixel contaminated by clouds)
-    data = ma.masked_where(flags == 60, data)# CTTH_EFFECTIVE missing (CMa - Cloud filled)
-    data = ma.masked_where(flags == 76, data)# CTTH_EFFECTIVE missing (CMa - contaminated by snow/ice)
-    data = ma.masked_where(flags == 812, data)# Td2m missing (CMa - pixel contaminated by clouds)
-    data = ma.masked_where(flags == 828, data)# Td2m missing (CMa - Cloud filled)
-    data = ma.masked_where(flags == 844, data)# Td2m missing (CMa - contaminated by snow/ice)
-##    data = ma.masked_where(flags == 11422, data)# Below Nominal (CMa - Cloud-free)
-##    data = ma.masked_where(flags == 19614, data)# Nominal (CMa - Cloud-free)
-##    data = ma.masked_where(flags == 27806, data)# Above Nominal (CMa - Cloud-free)
-##    data = ma.masked_where(flags == 13102, data)# Below Nominal (CMa - pixel contaminated by clouds)
-##    data = ma.masked_where(flags == 21294, data)# Nominal (CMa - pixel contaminated by clouds)
-##    data = ma.masked_where(flags == 29486, data)# Above Nominal (CMa - pixel contaminated by clouds)
-##    data = ma.masked_where(flags == 13118, data)# Below Nominal (CMa - Cloud filled)
-##    data = ma.masked_where(flags == 21310, data)# Nominal (CMa - Cloud filled)
-##    data = ma.masked_where(flags == 29502, data)# Above Nominal (CMa - Cloud filled)
-##    data = ma.masked_where(flags == 13134, data)# Below Nominal (CMa - contaminated by snow/ice)
-##    data = ma.masked_where(flags == 21326, data)# Nominal(CMa - contaminated by snow/ice)
-##    data = ma.masked_where(flags == 29518, data)# Above Nominal (CMa - contaminated by snow/ice)
 
     return data
