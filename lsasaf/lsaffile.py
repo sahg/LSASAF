@@ -10,12 +10,124 @@ import os
 from bz2 import BZ2File
 from datetime import datetime
 
+import h5py
 import numpy as np
 import tables as h5
 
 from numpy import ma
 
-__all__ = ['parse_file_name']
+__all__ = ['parse_file_name', 'LSAFFile', 'DSSFFile']
+
+class LSAFFile:
+    """Base class for LSASAF file readers
+
+    """
+    def __init__(self, fname):
+        self.fname = fname
+        self.metadata = {}  # Only evaluate on demand
+
+    def read_metadata(self, dset_name=None):
+        if dset_name is None:
+            dset_name = '/'
+            self._read_metad(dset_name)
+        else:
+            self._read_metad(dset_name)
+
+        return self.metadata[dset_name]
+
+    def slot_time(self):
+        """Parse an LSA-SAF file name to get the slot time.
+
+        A datetime object containing the slot time (in UTC) is returned.
+
+        """
+        # HDF5_LSASAF_MSG_DSLF_SAfr_200702211000.h5 or
+        # S-LSA_-HDF5_LSASAF_MSG_DSLF_SAfr_200707260830 etc.
+        indx = self.fname.rfind('_') + 1
+        year = int(self.fname[indx:indx+4])
+        month = int(self.fname[indx+4:indx+6])
+        day = int(self.fname[indx+6:indx+8])
+        hour = int(self.fname[indx+8:indx+10])
+        minute = int(self.fname[indx+10:indx+12])
+
+        return datetime(year, month, day, hour, minute)
+
+    def read_raw_dataset(self, dset_name):
+        """Read a raw dataset as it appears on file
+
+        Reads the requested dataset as it appears in the HDF5 file. No
+        shifting, scaling, masking or datatype changes are applied. The data
+        returned by this function must be interpreted in conjunction with the
+        dataset metadata and LSASAF documentation.
+
+        Parameters
+        ----------
+        dset_name : string
+            The name of the dataset to be read.
+
+        Returns
+        -------
+        data : numpy ndarray
+
+            A numpy ndarray object containing the dataset as stored on disk.
+            The datatype is as stored and no shifting, scaling or masking is
+            applied.
+
+        """
+        with h5py.File(self.fname) as h5file:
+            data = np.array(h5file[dset_name][...])
+
+        return data
+
+    def read_dataset(self, dset_name):
+        with h5py.File(self.fname) as h5file:
+            ds = h5file[dset_name]
+
+            data = ds[...]
+
+            offset = ds.attrs.get("OFFSET")
+            scale = ds.attrs.get("SCALING_FACTOR")
+            missing = ds.attrs.get("MISSING_VALUE")
+
+            if (scale is not None) and (offset is not None):
+                data = data/scale + offset
+            if missing is not None:
+                data[data == missing] = np.nan
+
+        return data
+
+    def _read_metad(self, dset_name):
+        """Write file metadata into class dict"""
+        with h5py.File(self.fname) as h5file:
+            self.metadata[dset_name] = {k: v for k, v in
+                                        zip(h5file[dset_name].attrs.keys(),
+                                            h5file[dset_name].attrs.values())
+                                        }
+
+class DSSFFile(LSAFFile):
+    """docstring for DSSFFile."""
+    def __init__(self, fname):
+        super().__init__(fname)
+
+    # def read_dataset(self):  # Override parent class version
+    def read_dssf(self):
+        """Get a masked array containing the DSSF values.
+
+        Sea, space and severly contaminated pixels are masked out. The mask is
+        defined according to the bitfield specified in
+        SAF_LAND_MF_PUM_DSSF_1.4.pdf. The masked array returned by this
+        function contains the DSSF in W/m^2.
+
+        """
+
+        data = self.read_dataset('/DSSF')
+        flags = self.read_raw_dataset('/DSSF_Q_Flag')
+
+        # Mask based on the quality flags [THIS IS STILL IN-PROGRESS]
+        data[flags == 0] = np.nan  # ocean pixel
+        data[flags == 2] = np.nan  # space pixel
+
+        return data
 
 def parse_file_name(file_name):
     """Parse an LSA-SAF file name to get the slot time.
