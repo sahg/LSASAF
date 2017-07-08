@@ -15,7 +15,7 @@ import numpy as np
 
 from .nav import geoloc_to_pixelloc
 
-__all__ = ['LSAFFile', 'DSSFFile']
+__all__ = ['LSAFFile', 'DSSFFile', 'DSLFFile', 'LSTFile']
 
 class LSAFFile:
     """Base class for LSASAF file readers
