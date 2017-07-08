@@ -271,19 +271,3 @@ def _test_bit_values(n, p):
     _get_bit_value(n, p)
 
     return (n >> p) & 1
-
-def read_dssf(file_name):
-    """Get a masked array containing the DSSF values.
-
-    Sea, space and severly contaminated pixels are masked out. The mask is defined
-    according to the bitfield specified in SAF_LAND_MF_PUM_DSSF_1.4.pdf. The
-    masked array returned by this function contains the DSSF in W/m^2.
-
-    """
-    data, flags = _read_raw(file_name, '/DSSF', '/DSSF_Q_Flag')
-
-    # mask based on the quality flags [THIS IS STILL INCOMPLETE!!!]
-    data = ma.masked_where(flags == 0, data)# ocean pixel [Always masked]
-    data = ma.masked_where(flags == 2, data)# space pixel [Always masked]
-
-    return data
