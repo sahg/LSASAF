@@ -137,9 +137,9 @@ class LSAFFile:
             loff = h5file.attrs['LOFF'] - 1
             coff = h5file.attrs['COFF'] - 1
 
-            offset = h5file[dset_name]['OFFSET']
-            scale = h5file[dset_name]['SCALING_FACTOR']
-            missing = h5file[dset_name]['MISSING_VALUE']
+            offset = h5file[dset_name].attrs['OFFSET']
+            scale = h5file[dset_name].attrs['SCALING_FACTOR']
+            missing = h5file[dset_name].attrs['MISSING_VALUE']
 
         row, col = geoloc_to_pixelloc(lat, lon, loff, coff)
         data = data[row, col]
