@@ -91,6 +91,7 @@ class LSAFFile:
 
             if (scale is not None) and (offset is not None):
                 data = data/scale + offset
+
             if missing is not None:
                 data[data == missing] = np.nan
 
