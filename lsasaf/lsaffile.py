@@ -12,9 +12,6 @@ from datetime import datetime
 
 import h5py
 import numpy as np
-import tables as h5
-
-from numpy import ma
 
 __all__ = ['LSAFFile', 'DSSFFile']
 
@@ -181,76 +178,43 @@ class DSLFFile(LSAFFile):
 
         return data
 
-def _read_raw(file_name, data_node_name, quality_node_name):
-    """Return the raw data and quality control flags.
+class LSTFile(LSAFFile):
+    """docstring for LSTFile."""
+    def __init__(self, fname):
+        super().__init__(fname)
 
-    This function returns the data as stored in the HDF5 data and q_flag
-    arrays. The scaling factors are applied. Use this function if you need to
-    do your own (non-standard) masking of the LSA-SAF data. Numpy arrays are
-    returned with the same shape as the HDF5 data arrays. The returned data
-    array has type float32 and the flags array has the same type as the data in
-    the HDF5 file.
+    def read_dataset(self):  # Override parent class version
+        """Get a masked array containing the LST values.
 
-    """
-    h5file = h5.openFile(file_name)
+        Sea, space and severly contaminated pixels are masked out. The masked
+        array returned by this function contains the LST in degrees Centigrade.
 
-    node = h5file.getNode(data_node_name)
-    data = node.read()
-    data = np.asarray(data, np.float32)
-    if (node._v_attrs.SCALING_FACTOR != 1):
-        data /= node._v_attrs.SCALING_FACTOR
+        """
+        data = super().read_dataset('/LST')
+        flags = self.read_raw_dataset('/Q_FLAGS')
 
-    node = h5file.getNode(quality_node_name)
-    flags = node.read()
+        # Mask based on the quality flags [THIS IS STILL IN-PROGRESS]
+        data[flags == 0] = np.nan  # sea or space pixel
 
-    h5file.close()
+        data[flags == 0] = np.nan  # sea pixel
+        data[flags == 4] = np.nan  # corrupted pixel
+        data[flags == 12] = np.nan  # CMa - pixel non processed
+        data[flags == 44] = np.nan  # CMa - pixel contaminated by clouds
+        data[flags == 60] = np.nan  # CMa - Cloud filled
+        data[flags == 76] = np.nan  # CMa - contaminated by snow/ice
+        data[flags == 92] = np.nan  # CMa - Undefined
+        data[flags == 28] = np.nan  # Emissivity Information Missing
+        data[flags == 156] = np.nan  # View Angle Out of Range (EM Poor)
+        data[flags == 284] = np.nan  # View Angle Out of Range (EM Nominal)
+        data[flags == 412] = np.nan  # View Angle Out of Range (EM Excellent)
+        data[flags == 668] = np.nan  # cwv information missing
+        data[flags == 796] = np.nan  # cwv information missing
+        data[flags == 924] = np.nan  # cwv information missing
+        # data[flags == 5790] = np.nan  # Below Nominal (+ EM below nominal)
+        # data[flags == 5918] = np.nan  # Below Nominal (+ EM nominal)
+        # data[flags == 6046] = np.nan  # Below Nominal (+ EM above nominal)
+        # data[flags == 10014] = np.nan  # Nominal (EM nominal)
+        # data[flags == 10142] = np.nan  # Nominal (EM above nominal)
+        # data[flags == 14238] = np.nan  # Above Nominal (EM above nominal)
 
-    return data, flags
-
-def read_lst(file_name):
-    """Get a masked array containing the LST values.
-
-    Sea, space and severly contaminated pixels are masked out. The masked array
-    returned by this function contains the LST in degrees Centigrade.
-
-    """
-    # _read_raw() requires an uncompressed HDF5 file
-    if file_name[-3:] == 'bz2':
-        # create a temp file
-        temp_fname = 'temp.h5'
-
-        bz2_file = BZ2File(file_name)
-        fp = open(temp_fname, 'wb')
-        fp.write(bz2_file.read())
-        fp.close()
-        bz2_file.close()
-
-        data, flags = _read_raw(temp_fname, '/LST', '/Q_FLAGS')
-
-        os.remove(temp_fname)
-    else:
-        data, flags = _read_raw(file_name, '/LST', '/Q_FLAGS')
-
-    # mask based on the quality flags
-    data = ma.masked_where(flags == 0, data)# sea pixel
-    data = ma.masked_where(flags == 4, data)# corrupted pixel
-    data = ma.masked_where(flags == 12, data)# CMa - pixel non processed
-    data = ma.masked_where(flags == 44, data)# CMa - pixel contaminated by clouds
-    data = ma.masked_where(flags == 60, data)# CMa - Cloud filled
-    data = ma.masked_where(flags == 76, data)# CMa - contaminated by snow/ice
-    data = ma.masked_where(flags == 92, data)# CMa - Undefined
-    data = ma.masked_where(flags == 28, data)# Emissivity Information Missing
-    data = ma.masked_where(flags == 156, data)# Viewing Angle Out of Range (EM Poor)
-    data = ma.masked_where(flags == 284, data)# Viewing Angle Out of Range (EM Nominal)
-    data = ma.masked_where(flags == 412, data)# Viewing Angle Out of Range (EM Excellent)
-    data = ma.masked_where(flags == 668, data)# cwv information missing
-    data = ma.masked_where(flags == 796, data)# cwv information missing
-    data = ma.masked_where(flags == 924, data)# cwv information missing
-##    data = ma.masked_where(flags == 5790, data)# Below Nominal (+ EM below nominal)
-##    data = ma.masked_where(flags == 5918, data)# Below Nominal (+ EM nominal)
-##    data = ma.masked_where(flags == 6046, data)# Below Nominal (+ EM above nominal)
-##    data = ma.masked_where(flags == 10014, data)# Nominal (EM nominal)
-##    data = ma.masked_where(flags == 10142, data)# Nominal (EM above nominal)
-##    data = ma.masked_where(flags == 14238, data)# Above Nominal (EM above nominal)
-
-    return data
+        return data
