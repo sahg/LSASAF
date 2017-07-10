@@ -127,7 +127,18 @@ class LSAFFile:
         return data
 
     def read_dataset(self, dset_name):
-        with h5py.File(self.fname) as h5file:
+        if self.compressed:
+            with tempfile.TemporaryDirectory() as tmpdir_name:
+                self._decompress_bz2(tmpdir_name)
+
+                data = self._read_dataset(self.decomp_path, dset_name)
+        else:
+            data = self._read_dataset(self.fname, dset_name)
+
+        return data
+
+    def _read_dataset(self, fname, dset_name):
+        with h5py.File(fname) as h5file:
             ds = h5file[dset_name]
 
             data = ds[...]
