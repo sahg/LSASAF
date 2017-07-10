@@ -145,24 +145,14 @@ class LSAFFile:
         return data
 
     def sample_dataset(self, dset_name, lat, lon):
-        with h5py.File(self.fname) as h5file:
-            data = h5file[dset_name][...]
+        if self.compressed:
+            with tempfile.TemporaryDirectory() as tmpdir_name:
+                self._decompress_bz2(tmpdir_name)
 
-            loff = h5file.attrs['LOFF'] - 1
-            coff = h5file.attrs['COFF'] - 1
-
-            offset = h5file[dset_name].attrs['OFFSET']
-            scale = h5file[dset_name].attrs['SCALING_FACTOR']
-            missing = h5file[dset_name].attrs['MISSING_VALUE']
-
-        row, col = geoloc_to_pixelloc(lat, lon, loff, coff)
-        data = data[row, col]
-
-        if (scale is not None) and (offset is not None):
-            data = data/scale + offset
-
-        if missing is not None:
-            data[data == missing] = np.nan
+                data = self._sample_dataset(self.decomp_path,
+                                            dset_name, lat, lon)
+        else:
+            data = self._sample_dataset(self.fname, dset_name, lat, lon)
 
         return data
 
@@ -196,6 +186,28 @@ class LSAFFile:
         row, col = geoloc_to_pixelloc(lat, lon, loff, coff)
 
         return data[row, col]
+
+    def _sample_dataset(self, fname, dset_name, lat, lon):
+        with h5py.File(fname) as h5file:
+            data = h5file[dset_name][...]
+
+            loff = h5file.attrs['LOFF'] - 1
+            coff = h5file.attrs['COFF'] - 1
+
+            offset = h5file[dset_name].attrs['OFFSET']
+            scale = h5file[dset_name].attrs['SCALING_FACTOR']
+            missing = h5file[dset_name].attrs['MISSING_VALUE']
+
+        row, col = geoloc_to_pixelloc(lat, lon, loff, coff)
+        data = data[row, col]
+
+        if (scale is not None) and (offset is not None):
+            data = data/scale + offset
+
+        if missing is not None:
+            data[data == missing] = np.nan
+
+        return data
 
     def _decompress_bz2(self, decomp_dir=None):
         comp_path = pathlib.Path(self.fname)
