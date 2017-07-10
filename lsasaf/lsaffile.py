@@ -7,7 +7,8 @@ therefore the module requires the PyTables package. Numpy is also used.
 
 """
 import os
-from bz2 import BZ2File
+import bz2
+import pathlib
 from datetime import datetime
 
 import h5py
@@ -23,6 +24,7 @@ class LSAFFile:
     """
     def __init__(self, fname):
         self.fname = fname
+        self.decomp_path = None
         self.metadata = {}  # Only evaluate on demand
 
     def read_metadata(self, dset_name=None):
@@ -159,6 +161,23 @@ class LSAFFile:
                                         zip(h5file[dset_name].attrs.keys(),
                                             h5file[dset_name].attrs.values())
                                         }
+
+    def _decompress_bz2(self, decomp_dir=None):
+        comp_path = pathlib.Path(self.fname)
+
+        if decomp_dir:
+            # Decompression directory specified
+            decomp_path = pathlib.Path(decomp_dir)
+            decomp_path = decomp_path.joinpath(comp_path.stem)
+        else:
+            # Decompress in current working dir
+            decomp_path = comp_path.stem
+
+        with bz2.BZ2File(comp_path, 'rb') as bz2f:
+            with open(decomp_path, 'wb') as f:
+                f.write(bz2f.read())
+
+        self.decomp_path = decomp_path
 
 class DSSFFile(LSAFFile):
     """docstring for DSSFFile."""
