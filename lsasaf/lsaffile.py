@@ -8,6 +8,7 @@ therefore the module requires the PyTables package. Numpy is also used.
 """
 import bz2
 import pathlib
+import tempfile
 from datetime import datetime
 
 import h5py
@@ -23,7 +24,13 @@ class LSAFFile:
     """
     def __init__(self, fname):
         self.fname = fname
+
         self.decomp_path = None
+        if pathlib.Path(fname).suffix == '.bz2':
+            self.compressed = True
+        else:
+            self.compressed = False
+
         self.metadata = {}  # Only evaluate on demand
 
     def read_metadata(self, dset_name=None):
@@ -74,8 +81,13 @@ class LSAFFile:
             applied.
 
         """
-        with h5py.File(self.fname) as h5file:
-            data = np.array(h5file[dset_name][...])
+        if self.compressed:
+            with tempfile.TemporaryDirectory() as tmpdir_name:
+                self._decompress_bz2(tmpdir_name)
+
+                data = self._read_raw_dataset(self.decomp_path, dset_name)
+        else:
+            data = self._read_raw_dataset(self.fname, dset_name)
 
         return data
 
@@ -160,6 +172,15 @@ class LSAFFile:
                                         zip(h5file[dset_name].attrs.keys(),
                                             h5file[dset_name].attrs.values())
                                         }
+
+    def _read_raw_dataset(self, fname, dset_name):
+        """Read a raw dataset as it appears on file
+
+        """
+        with h5py.File(fname) as h5file:
+            data = np.array(h5file[dset_name][...])
+
+            return data
 
     def _decompress_bz2(self, decomp_dir=None):
         comp_path = pathlib.Path(self.fname)
