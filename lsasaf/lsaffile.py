@@ -6,7 +6,6 @@ the Land Surface Analysis Satellite Applications Facility
 therefore the module requires the PyTables package. Numpy is also used.
 
 """
-import os
 import bz2
 import pathlib
 from datetime import datetime
