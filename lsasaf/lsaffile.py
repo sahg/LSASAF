@@ -137,24 +137,6 @@ class LSAFFile:
 
         return data
 
-    def _read_dataset(self, fname, dset_name):
-        with h5py.File(fname) as h5file:
-            ds = h5file[dset_name]
-
-            data = ds[...]
-
-            offset = ds.attrs.get("OFFSET")
-            scale = ds.attrs.get("SCALING_FACTOR")
-            missing = ds.attrs.get("MISSING_VALUE")
-
-            if (scale is not None) and (offset is not None):
-                data = data/scale + offset
-
-            if missing is not None:
-                data[data == missing] = np.nan
-
-        return data
-
     def sample_dataset(self, dset_name, lat, lon):
         if self.compressed:
             with tempfile.TemporaryDirectory() as tmpdir_name:
@@ -197,6 +179,24 @@ class LSAFFile:
         row, col = geoloc_to_pixelloc(lat, lon, loff, coff)
 
         return data[row, col]
+
+    def _read_dataset(self, fname, dset_name):
+        with h5py.File(fname) as h5file:
+            ds = h5file[dset_name]
+
+            data = ds[...]
+
+            offset = ds.attrs.get("OFFSET")
+            scale = ds.attrs.get("SCALING_FACTOR")
+            missing = ds.attrs.get("MISSING_VALUE")
+
+            if (scale is not None) and (offset is not None):
+                data = data/scale + offset
+
+            if missing is not None:
+                data[data == missing] = np.nan
+
+        return data
 
     def _sample_dataset(self, fname, dset_name, lat, lon):
         with h5py.File(fname) as h5file:
