@@ -7,12 +7,12 @@ def test_read_raw_dataset_compressed():
 
     dssf_fname = data_dir + 'S-LSA_-HDF5_LSASAF_MSG_DSSF_SAfr_201706091400'
 
-    dssf_file = lsasaf.DSSFFile(dssf_fname)
+    dssf_file = lsasaf.LSAFFile(dssf_fname)
     decomp_dset = dssf_file.read_raw_dataset('DSSF')
 
     dssf_fname = data_dir + 'S-LSA_-HDF5_LSASAF_MSG_DSSF_SAfr_201706091400.bz2'
 
-    dssf_file = lsasaf.DSSFFile(dssf_fname)
+    dssf_file = lsasaf.LSAFFile(dssf_fname)
     comp_dset = dssf_file.read_raw_dataset('DSSF')
 
     assert np.allclose(decomp_dset, comp_dset)
@@ -25,12 +25,12 @@ def test_sample_raw_dataset_compressed():
 
     dssf_fname = data_dir + 'S-LSA_-HDF5_LSASAF_MSG_DSSF_SAfr_201706091400'
 
-    dssf_file = lsasaf.DSSFFile(dssf_fname)
+    dssf_file = lsasaf.LSAFFile(dssf_fname)
     decomp_dset = dssf_file.sample_raw_dataset('DSSF', lat, lon)
 
     dssf_fname = data_dir + 'S-LSA_-HDF5_LSASAF_MSG_DSSF_SAfr_201706091400.bz2'
 
-    dssf_file = lsasaf.DSSFFile(dssf_fname)
+    dssf_file = lsasaf.LSAFFile(dssf_fname)
     comp_dset = dssf_file.sample_raw_dataset('DSSF', lat, lon)
 
     assert np.allclose(decomp_dset, comp_dset)
