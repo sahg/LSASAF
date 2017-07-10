@@ -115,15 +115,16 @@ class LSAFFile:
             A numpy ndarray object containing the dataset as stored on disk.
 
         """
-        with h5py.File(self.fname) as h5file:
-            data = h5file[dset_name][...]
+        if self.compressed:
+            with tempfile.TemporaryDirectory() as tmpdir_name:
+                self._decompress_bz2(tmpdir_name)
 
-            loff = h5file.attrs['LOFF'] - 1
-            coff = h5file.attrs['COFF'] - 1
+                data = self._sample_raw_dataset(self.decomp_path,
+                                                dset_name, lat, lon)
+        else:
+            data = self._sample_raw_dataset(self.fname, dset_name, lat, lon)
 
-        row, col = geoloc_to_pixelloc(lat, lon, loff, coff)
-
-        return data[row, col]
+        return data
 
     def read_dataset(self, dset_name):
         with h5py.File(self.fname) as h5file:
@@ -181,6 +182,20 @@ class LSAFFile:
             data = np.array(h5file[dset_name][...])
 
             return data
+
+    def _sample_raw_dataset(self, fname, dset_name, lat, lon):
+        """Sample a raw dataset as it appears on file
+
+        """
+        with h5py.File(fname) as h5file:
+            data = h5file[dset_name][...]
+
+            loff = h5file.attrs['LOFF'] - 1
+            coff = h5file.attrs['COFF'] - 1
+
+        row, col = geoloc_to_pixelloc(lat, lon, loff, coff)
+
+        return data[row, col]
 
     def _decompress_bz2(self, decomp_dir=None):
         comp_path = pathlib.Path(self.fname)
