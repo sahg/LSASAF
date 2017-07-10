@@ -33,12 +33,13 @@ class LSAFFile:
 
         self.metadata = {}  # Only evaluate on demand
 
-    def read_metadata(self, dset_name=None):
-        if dset_name is None:
-            dset_name = '/'
-            self._read_metad(dset_name)
+    def read_metadata(self, dset_name='/'):
+        if self.compressed:
+            with tempfile.TemporaryDirectory() as tmpdir_name:
+                self._decompress_bz2(tmpdir_name)
+                self._read_metad(self.decomp_path, dset_name)
         else:
-            self._read_metad(dset_name)
+            self._read_metad(self.fname, dset_name)
 
         return self.metadata[dset_name]
 
@@ -149,9 +150,9 @@ class LSAFFile:
 
         return data
 
-    def _read_metad(self, dset_name):
+    def _read_metad(self, fname, dset_name):
         """Write file metadata into class dict"""
-        with h5py.File(self.fname) as h5file:
+        with h5py.File(fname) as h5file:
             self.metadata[dset_name] = {k: v for k, v in
                                         zip(h5file[dset_name].attrs.keys(),
                                             h5file[dset_name].attrs.values())
