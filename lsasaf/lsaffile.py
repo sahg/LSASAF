@@ -2,8 +2,8 @@
 
 This module contains some functions for reading the data products produced by
 the Land Surface Analysis Satellite Applications Facility
-(http://landsaf.meteo.pt). The data products are distributed in HDF5 format and
-therefore the module requires the PyTables package. Numpy is also used.
+(https://landsaf.ipma.pt/). The data products are distributed in HDF5 format
+and therefore the module requires the h5py package. Numpy is also used.
 
 """
 import bz2
